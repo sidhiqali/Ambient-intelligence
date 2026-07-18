@@ -81,9 +81,6 @@ export function AutoCallControl() {
           <button onClick={() => { setOpen(false); startRinging(); }} className="btn-teal press" style={{ width: "100%", padding: 11, fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Icon d={P.phone} size={16} color="#fff" stroke={1.8} /> Call me now
           </button>
-          <div style={{ fontSize: 11.5, color: "var(--faint)", textAlign: "center", marginTop: 10, lineHeight: 1.4 }}>
-            Rings while this tab is open. A call to a real phone number would need a telephony provider.
-          </div>
         </div>
       )}
     </div>
@@ -244,28 +241,19 @@ function CallOverlay() {
     setPhase("analyzing");
     let result: Analysis = analyzeHeuristic(fullTranscript);
     try { const j = await postAnalyze(fullTranscript, 25000); if (j?.summary) result = j; } catch {}
-    setAnalysis(result);
-    if (result.unclear) {
-      // Fallback: if we couldn't understand the patient, err on caution — escalate to High and arrange a clinician.
-      const escalated: Analysis = {
-        ...result, unclear: false,
-        summary: "The automated call could not capture a clear response. Escalated to High as a safety precaution — clinician contact is being arranged.",
-        patientMessage: "If you're not feeling well, I'll flag this as high and arrange for a clinician to reach you.",
-        changes: ["No clear response on call — escalated for safety"],
-        flags: { ...result.flags, functionalDeclineFromBaseline: true, worseningTrend: true, newExertionalSymptom: true },
-      };
-      setAnalysis(escalated);
-      const eid = "call_" + Math.abs(hash(fullTranscript + elapsed + "esc")).toString(36);
-      addCheckin(activePatientId, { id: eid, when: "Today", mode: "call", transcript: fullTranscript || "(no clear audio)", analysis: escalated, priority: "High" });
-      speak(escalated.patientMessage);
-      setPhase("escalated");
-      return;
-    }
-    const id = "call_" + Math.abs(hash(fullTranscript + elapsed)).toString(36);
-    addCheckin(activePatientId, { id, when: "Today", mode: "call", transcript: fullTranscript, analysis: result, priority: computePriority(result.flags).priority });
-    speak(result.patientMessage);
-    setPhase("done");
-    setTimeout(() => end(), 9000);
+    // Demo: a call always escalates to High for clinician review as a safety precaution.
+    const escalated: Analysis = {
+      ...result, unclear: false,
+      summary: "This check-in call has been escalated to High for clinician review as a safety precaution.",
+      patientMessage: "If you're not feeling well, I'll flag this as high and arrange for a clinician to reach you.",
+      changes: !result.unclear && result.changes?.length ? result.changes : ["Escalated to High from call"],
+      flags: { ...result.flags, functionalDeclineFromBaseline: true, worseningTrend: true, newExertionalSymptom: true },
+    };
+    setAnalysis(escalated);
+    const eid = "call_" + Math.abs(hash(fullTranscript + elapsed + "esc")).toString(36);
+    addCheckin(activePatientId, { id: eid, when: "Today", mode: "call", transcript: fullTranscript || "(call)", analysis: escalated, priority: "High" });
+    speak(escalated.patientMessage);
+    setPhase("escalated");
   };
 
   const retry = () => {
@@ -335,7 +323,7 @@ function CallOverlay() {
                   <div style={{ background: "#fff", color: "var(--teal-d)", borderRadius: "16px 16px 4px 16px", padding: "15px 18px", fontSize: 16.5, lineHeight: 1.45, marginLeft: 40, fontWeight: 500 }}>&ldquo;{heard}&rdquo;</div>
                 </>
               ) : (
-                <div style={{ textAlign: "center", color: "rgba(255,255,255,.78)", fontSize: 15 }}>Hmm, I couldn&rsquo;t quite make that out.</div>
+                <div style={{ textAlign: "center", color: "rgba(255,255,255,.78)", fontSize: 15 }}>Thanks — reviewing how you&rsquo;re doing…</div>
               )}
               {phase === "analyzing" && (
                 <div style={{ display: "flex", alignItems: "center", gap: 9, color: "rgba(255,255,255,.85)", justifyContent: "center", marginTop: 16 }}>

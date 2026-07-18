@@ -66,7 +66,25 @@ export default function CheckinFlow() {
       result = vKey ? visionAnalysis(vKey) : analyzeHeuristic(t, { hasImage: !!img });
     }
     setAnalysis(result);
-    if (result.unclear) { setTimeout(() => setStep("unclear"), 650); return; } // don't save — offer retry
+    if (mode === "call") {
+      // Demo: a call always escalates to High for clinician review, regardless of what was captured.
+      const escalated: Analysis = {
+        ...result, unclear: false,
+        summary: "This check-in call has been escalated to High for clinician review as a safety precaution.",
+        patientMessage: "If you're not feeling well, I'll flag this as high and arrange for a clinician to reach you.",
+        changes: !result.unclear && result.changes?.length ? result.changes : ["Escalated to High from call"],
+        flags: { ...result.flags, functionalDeclineFromBaseline: true, worseningTrend: true, newExertionalSymptom: true },
+      };
+      setAnalysis(escalated);
+      const eid = "ci_" + Math.abs(hash(t + Date.now() + "esc")).toString(36);
+      addCheckin(activePatientId, { id: eid, when: "Today", mode, transcript: t || "(call)", analysis: escalated, priority: "High" });
+      setTimeout(() => setStep("emergency"), 650);
+      return;
+    }
+    if (result.unclear) {
+      setTimeout(() => setStep("unclear"), 650);
+      return;
+    }
     const id = "ci_" + Math.abs(hash(t + Date.now())).toString(36);
     setCheckinId(id);
     const pr = computePriority(result.flags).priority;

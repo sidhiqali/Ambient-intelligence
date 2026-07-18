@@ -69,7 +69,7 @@ export default function NewPatient() {
           <Field label="Sex at birth"><select value={sex} onChange={(e) => setSex(e.target.value)} style={inp}><option>Female</option><option>Male</option><option>Intersex</option></select></Field>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", gap: 12, marginTop: 12 }}>
-          <Field label="Ethnicity"><input value={ethnicity} onChange={(e) => setEthnicity(e.target.value)} placeholder="e.g. Black British" style={inp} /></Field>
+          <Field label="Ethnicity"><input value={ethnicity} onChange={(e) => setEthnicity(e.target.value)} placeholder="e.g. British" style={inp} /></Field>
           <Field label="Height (cm)"><input value={height} onChange={(e) => setHeight(e.target.value.replace(/\D/g, ""))} placeholder="172" style={inp} /></Field>
           <Field label="Condition"><select value={condition} onChange={(e) => setCondition(e.target.value)} style={inp}>{CONDITIONS.map((c) => <option key={c}>{c}</option>)}</select></Field>
         </div>
